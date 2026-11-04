@@ -437,6 +437,8 @@ body{line-height:1.6;font-size:15.5px}
     <div class="card pad">
       <div class="sec">অ্যাকাউন্ট নিরাপত্তা</div>
       <p class="small" style="margin-top:6px">হিসাব অনলাইনে আপনার অনুমোদিত Firebase অ্যাকাউন্টে সংরক্ষিত হয়। ব্যবহার শেষে নিরাপদে বের হয়ে যান।</p>
+      <button type="button" class="btn ghost" data-action="lock-toggle" id="lock-btn" style="margin-top:12px"></button>
+      <p class="small" id="lock-note" style="margin-top:6px"></p>
       <button type="button" class="btn ghost" data-action="logout" style="margin-top:12px">অ্যাকাউন্ট থেকে বের হোন</button>
     </div>
   </section>
@@ -1864,7 +1866,13 @@ function applyShop(d){
   var cl=contactLine(),hc=$('#hd-contact');
   hc.textContent=cl;hc.hidden=!cl;
 }
+function lockUI(){
+  var on=lockOn();
+  $('#lock-btn').textContent=on?'নতুন করে অ্যাপ খুললে পাসওয়ার্ড চাওয়া: চালু ✓':'নতুন করে অ্যাপ খুললে পাসওয়ার্ড চাওয়া: বন্ধ';
+  $('#lock-note').textContent=on?'অ্যাপ বন্ধ করে আবার খুললে ইমেইল-পাসওয়ার্ড দিতে হবে। ফোন হারালে বা অন্য কারও হাতে গেলে হিসাব সুরক্ষিত থাকবে।':'বন্ধ থাকলে একবার ঢুকলে প্রতিবার নিজে থেকে খুলে যাবে। ফোন অন্য কারও হাতে গেলে সে আপনার হিসাব দেখতে পারবে।';
+}
 function renderSettings(){
+  lockUI();
   $('#more-menu').innerHTML=menuHTML();
   var a=document.activeElement;
   if(a&&a.closest&&a.closest('#view-settings')&&a.tagName==='INPUT')return;
@@ -2026,6 +2034,7 @@ function init(){
   });
 }
 
+function lockOn(){try{return localStorage.getItem('rs-lock')!=='0'}catch(e){return true}}
 function startFirebaseAuth(){
   var cfg={
     apiKey:'AIzaSyAOIyQE8dq6IcsPwe7lQSGwzRJjsIsoKXU',
@@ -2041,7 +2050,7 @@ function startFirebaseAuth(){
   var auth=firebase.auth();
   $('#auth-form').addEventListener('submit',function(ev){
     ev.preventDefault();
-    var btn=$('#auth-submit');btn.disabled=true;btn.textContent='প্রবেশ করা হচ্ছে…';
+    var btn=$('#auth-submit');btn.disabled=true;btn.textContent='প্রবেশ করা হচ্ছে…';window.__rsJustLogin=true;
     $('#auth-error').textContent='';
     auth.signInWithEmailAndPassword($('#auth-email').value.trim(),$('#auth-password').value)
       .catch(function(err){
@@ -2051,8 +2060,13 @@ function startFirebaseAuth(){
         $('#auth-error').textContent=msg;
       }).finally(function(){btn.disabled=false;btn.textContent='নিরাপদে প্রবেশ করুন'});
   });
+  var ssOK=true;try{sessionStorage.setItem('rs-t','1');sessionStorage.removeItem('rs-t')}catch(e){ssOK=false}
   auth.onAuthStateChanged(function(user){
     if(!user){$('#auth-gate').hidden=false;return}
+    /* অ্যাপ নতুন করে খুললে (ফোন থেকে বন্ধ করে আবার ঢুকলে) আবার ইমেইল-পাসওয়ার্ড চাওয়া হবে, যদি "আরও" এ এটি চালু থাকে */
+    var had=false;try{had=!!sessionStorage.getItem('rs-sess')}catch(e){}
+    if(ssOK&&lockOn()&&!had&&!window.__rsJustLogin){auth.signOut().catch(function(){});return}
+    try{sessionStorage.setItem('rs-sess','1')}catch(e){}
     $('#auth-gate').hidden=true;
     init().catch(function(){$('#auth-gate').hidden=false});
   });
@@ -3294,6 +3308,7 @@ function moreAction(a,t){
     else if(m==='recurring'){var d=new Date();state.draft.push({id:Math.random().toString(36).slice(2,8),name:'',amt:'',day:'1',wallet:wnames()[0],start:d.getFullYear()+'-'+pad(d.getMonth()+1)})}
     renderMore(true);return true;
   }
+  if(a==='lock-toggle'){try{localStorage.setItem('rs-lock',lockOn()?'0':'1')}catch(e){}lockUI();toast(lockOn()?'চালু হয়েছে':'বন্ধ হয়েছে');return true}
   if(a==='x-del'){readRows();state.draft.splice(i,1);renderMore(true);return true}
   if(a==='x-save'){
     readRows();
