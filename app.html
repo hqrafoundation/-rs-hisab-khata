@@ -322,6 +322,18 @@ body{line-height:1.6;font-size:15.5px}
 .rc-qr{display:flex;justify-content:center;padding-top:10px}
 #view-more .btn.sm{align-self:flex-start}
 #view-due>.btn.sm{align-self:flex-start}
+
+/* কম্পিউটারে পূর্ণ পর্দা */
+@media (min-width:900px){
+  .wrap{max-width:none;padding-left:max(24px,3vw);padding-right:max(24px,3vw)}
+  #view-home{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch}
+  #view-home>*{margin:0!important}
+  #view-home>.datehead,#view-home>.qgrid,#view-home>.linkcard,#view-home>.sec,#view-home>.list{grid-column:1/-1}
+  .qgrid{grid-template-columns:repeat(8,1fr)!important}
+  #view-add,#view-settings,#view-more{max-width:none;margin-inline:0}
+  .tabs-in{max-width:none;margin-inline:0}
+}
+@media (min-width:1500px){body{font-size:15.5px}}
 </style>
 
 <div id="auth-gate" class="auth-gate">
@@ -2044,7 +2056,7 @@ function init(){
   });
 }
 
-function lockOn(){try{return localStorage.getItem('rs-lock')!=='0'}catch(e){return true}}
+function lockOn(){try{return localStorage.getItem('rs-lock2')==='1'}catch(e){return false}}
 function startFirebaseAuth(){
   var cfg={
     apiKey:'AIzaSyAOIyQE8dq6IcsPwe7lQSGwzRJjsIsoKXU',
@@ -3318,7 +3330,7 @@ function moreAction(a,t){
     else if(m==='recurring'){var d=new Date();state.draft.push({id:Math.random().toString(36).slice(2,8),name:'',amt:'',day:'1',wallet:wnames()[0],start:d.getFullYear()+'-'+pad(d.getMonth()+1)})}
     renderMore(true);return true;
   }
-  if(a==='lock-toggle'){try{localStorage.setItem('rs-lock',lockOn()?'0':'1')}catch(e){}lockUI();toast(lockOn()?'চালু হয়েছে':'বন্ধ হয়েছে');return true}
+  if(a==='lock-toggle'){try{localStorage.setItem('rs-lock2',lockOn()?'0':'1')}catch(e){}lockUI();toast(lockOn()?'চালু হয়েছে':'বন্ধ হয়েছে');return true}
   if(a==='x-del'){readRows();state.draft.splice(i,1);renderMore(true);return true}
   if(a==='x-save'){
     readRows();
